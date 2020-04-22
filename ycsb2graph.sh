@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #==============================================================
 # DESCRIPTION: Generate graph for ycsb testing results
 #              
@@ -16,7 +16,6 @@
 # It can be single db result per directory, or mix for multiple db result
 # It can even combine the old result
 # So in order to do comparison, you only just do one more test for that db
-
 resultDir=( $@ )
 if [ "x$resultDir" = "x" ]; then
   resultDir="."
@@ -27,6 +26,7 @@ else
   pageDir="$resultDir"
 fi
 echo "Use the results directory: ${resultDir[@]}"
+
 
 # check at least one result file exist
 results="$( find ${resultDir[@]} -name '*.result' )"
@@ -60,11 +60,11 @@ getOps () {
 }
 
 getRunTime () {
-  xargs grep -H 'RunTime'
+  xargs -d "\n" grep -H 'RunTime'
 }
 
 getThroughput () {
-  xargs grep -H 'Throughput'
+  xargs -d "\n" grep -H 'Throughput'
 }
 
 
@@ -74,9 +74,8 @@ getThroughput () {
 getCategory () {
   cate=""
   contents="$( cat | awk '{ print $NF }' FS='/'  | \
-                 awk '{ print $1 }' FS='.result' | \
-		           awk '{ print $3 }' FS='-' | sort -n | uniq )"
-  
+                     awk '{ print $1 }' FS='.result' | \
+		                 awk '{ print $3 }' FS='-' | sort -n | uniq )"
   while read l; do
     if [ "x$l" = "x" ]; then
       continue
@@ -94,15 +93,12 @@ eof
 
 getData () {
   contents="$1"
-  
   data=""
   while read l; do
     if [ "x$l" = "x" ]; then
       continue
     fi
-    
-    j="$( echo $l | awk '{ print $3 }' )"
-    
+    j="$( echo $l | awk -F ',' '{ print $3 }' )"
     echo "$l" | grep -e Throughput -e FAILED > /dev/null
     if [ $? -ne 0 ]; then
       # convert to milliseconds
@@ -115,7 +111,7 @@ getData () {
     else
       data="$data,$j"
     fi
-  done <<eof
+  done << eof
 $contents
 eof
   echo "$data"
@@ -125,12 +121,12 @@ getSubtitle () {
   k="$1"
   subtitle=""
   case "$k" in
-    WorkloadA) subtitle="Update heavy, Read/Update ratio: 50/50" ;;
-    WorkloadB) subtitle="Read mostly, Read/Update ratio: 95/5" ;;
-    WorkloadC) subtitle="Read only, Read/Update ratio: 100/0" ;;
-    WorkloadD) subtitle="Read latest, Read/Update/Insert ratio: 95/0/5" ;;
-    WorkloadE) subtitle="Short ranges scan, Scan/Insert ratio: 95/5" ;;
-    WorkloadF) subtitle="Read-Modify-Write, Read/Read-Modify-Write ratio: 50/50" ;;
+    workloada) subtitle="Update heavy, Read/Update ratio: 50/50" ;;
+    workloadb) subtitle="Read mostly, Read/Update ratio: 95/5" ;;
+    workloadc) subtitle="Read only, Read/Update ratio: 100/0" ;;
+    workloadd) subtitle="Read latest, Read/Update/Insert ratio: 95/0/5" ;;
+    workloade) subtitle="Short ranges scan, Scan/Insert ratio: 95/5" ;;
+    workloadf) subtitle="Read-Modify-Write, Read/Read-Modify-Write ratio: 50/50" ;;
     *) subtitle="Unknown workload name" ;;
   esac
   echo "$subtitle"
@@ -150,8 +146,9 @@ genGraph () {
     if [ "x$db" = "x" ]; then
       continue
     fi
-    contents="$( echo "$output" | grep -w "$db" )"
+    contents="$( echo "$output" | grep -w "$db")"
     data="$( getData "$contents" )"
+    echo "data:${data}"
     if [ "x$data" != "x" ]; then
       name="$db"
       symbol="${symbols[i]}"
@@ -167,7 +164,7 @@ eof
   title="$k $desc"
   subtitle="$( getSubtitle "$k" )"
   ytitle="Latency (Milliseconds)"
-  xtitle="Throughput"
+  xtitle="number of threads"
   
   echo "$desc" | grep FAILED >/dev/null
   if [ $? -eq 0 ]; then
@@ -195,37 +192,40 @@ analyze () {
   dbs="$( echo "$files" | awk '{ print $NF }' FS='/' | \
               awk '{ print $1 }' FS='-' | uniq )"
   out=""
-  headline="<h2>$type</h2>"
-  
-  opkind="$( echo "$files" | xargs grep '^\[' | grep -v -e TOTAL \
+  headline="<h2> High contention (zipf distribution) </h2>"
+  opkind="$( echo "$files" | xargs -d "\n" grep '^\[' | grep -v -e TOTAL \
               -e CLEANUP -e OVERALL | awk '{ print $1 }' FS=',' | \
               awk '{ print $2 }' FS=':' | \
               sort -d | uniq )"
-  
-  while read op; do
-    key="$( echo $op | sed 's/\[/\\[/' )"
-    opname="$( echo $op | tr -d '[]' )"
-    out="$( echo "$files" | xargs grep "$key" | noNaN )"
+  opname="READ-MODIFY-WRITE"
+  out="$( echo "$files" | xargs -d "\n" grep "\[READ-MODIFY-WRITE]" | noNaN )"
+  genGraph "$type-$opname" "$dbs" "$out"
+#   while read op; do
+#     key="$( echo $op | sed 's/\[/\\[/' )"
+#     echo $key
+#     opname="$( echo $op | tr -d '[]' )"
+#     out="$( echo "$files" | xargs -d "\n" grep "$key" | noNaN )"
+#     color=""
+#     echo "$op" | grep FAILED > /dev/null
+#     if [ $? -eq 0 ]; then
+#       color="color: '#FF9800'"
+#       out="$( echo "$files" | xargs -d "\n" grep "$key" | getOps )"
+#       # echo $out
+
+#     fi
     
-    color=""
-    echo "$op" | grep FAILED > /dev/null
-    if [ $? -eq 0 ]; then
-      color="color: '#FF9800'"
-      out="$( echo "$files" | xargs grep "$key" | getOps )"
-    fi
-    
-    if [ "x$out" != "x" ]; then
-      genGraph "$type-$opname" "$dbs" "$out"
-    fi
-  done<<eof
-$opkind
-eof
+#     if [ "x$out" != "x" ]; then
+#       genGraph "$type-$opname" "$dbs" "$out"
+#     fi
+#   done<<eof
+# $opkind
+# eof
 
   color=""
-  out="$( echo "$files" | getRunTime )"
-  if [ "x$out" != "x" ]; then
-    genGraph "$type-OVERALL-RunTime" "$dbs" "$out"
-  fi
+  # out="$( echo "$files" | getRunTime )"
+  # if [ "x$out" != "x" ]; then
+  #   genGraph "$type-OVERALL-RunTime" "$dbs" "$out"
+  # fi
 
   out="$( echo "$files" | getThroughput )"
   if [ "x$out" != "x" ]; then
@@ -235,7 +235,7 @@ eof
 
 while read type; do
   echo "start $type"
-  files="$( echo "$results" | grep "$type" | sort -V )"
+  files="$( echo "$results" | grep "$type" | sort -V | awk '{ print $1 }' FS='\n' )"
   analyze "$type" "$files"
 done <<eof
 $types
