@@ -16,8 +16,7 @@
 # It can be single db result per directory, or mix for multiple db result
 # It can even combine the old result
 # So in order to do comparison, you only just do one more test for that db
-resultDir=( $1 )
-workload=($2)
+resultDir=( $@ )
 if [ "x$resultDir" = "x" ]; then
   resultDir="."
 fi
@@ -174,7 +173,7 @@ eof
   k="$( echo $id | awk '{ print $1 }' FS='-' )"
   desc="$( echo $id | sed "s/$k-//" )"
   title="$desc"
-  subtitle="$( getSubtitle "$workload" )"
+  subtitle="$( getSubtitle "workloadf" )"
   ytitle="Latency (Milliseconds)"
   xtitle="number of threads"
   
@@ -257,5 +256,5 @@ eof
 . ./page.template
 echo "$page" > "$pageDir/index.html"
 
-echo "see the url: http://192.168.100.94:8000/$pageDir"
+echo "see the url: http://10.128.170.51:8000/userContent/index.html"
 #end.
