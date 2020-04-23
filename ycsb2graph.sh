@@ -192,14 +192,11 @@ analyze () {
   dbs="$( echo "$files" | awk '{ print $NF }' FS='/' | \
               awk '{ print $1 }' FS='-' | uniq )"
   out=""
-  headline="<h2> High contention (zipf distribution) </h2>"
+  headline="<h2>"$type"</h2>"
   opkind="$( echo "$files" | xargs -d "\n" grep '^\[' | grep -v -e TOTAL \
               -e CLEANUP -e OVERALL | awk '{ print $1 }' FS=',' | \
               awk '{ print $2 }' FS=':' | \
               sort -d | uniq )"
-  opname="READ-MODIFY-WRITE"
-  out="$( echo "$files" | xargs -d "\n" grep "\[READ-MODIFY-WRITE]" | noNaN )"
-  genGraph "$type-$opname" "$dbs" "$out"
 #   while read op; do
 #     key="$( echo $op | sed 's/\[/\\[/' )"
 #     echo $key
@@ -231,6 +228,9 @@ analyze () {
   if [ "x$out" != "x" ]; then
     genGraph "$type-OVERALL-Throughput" "$dbs" "$out"
   fi
+  opname="READ-MODIFY-WRITE"
+  out="$( echo "$files" | xargs -d "\n" grep "\[READ-MODIFY-WRITE]" | noNaN )"
+  genGraph "$type-$opname" "$dbs" "$out"
 }
 
 while read type; do
