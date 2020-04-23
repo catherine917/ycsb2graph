@@ -138,7 +138,7 @@ getHeadLine ()  {
   case "$t" in
     zipfian) headline=" High contention (zipf distribution)" ;;
     uniform) headline="Low contention (uniform distribution)" ;;
-    *) headline="Low contention (uniform distribution)" ;;
+    *) headline="High contention (zipf distribution)" ;;
   esac
   echo "$headline"
 }
