@@ -16,7 +16,8 @@
 # It can be single db result per directory, or mix for multiple db result
 # It can even combine the old result
 # So in order to do comparison, you only just do one more test for that db
-resultDir=( $@ )
+resultDir=( $1 )
+workload=($2)
 if [ "x$resultDir" = "x" ]; then
   resultDir="."
 fi
@@ -132,6 +133,17 @@ getSubtitle () {
   echo "$subtitle"
 }
 
+getHeadLine ()  {
+  t="$1"
+  headline=""
+  case "$t" in
+    zipfian) headline=" High contention (zipf distribution)" ;;
+    uniform) headline="Low contention (uniform distribution)" ;;
+    *) headline="Low contention (uniform distribution)" ;;
+  esac
+  echo "$headline"
+}
+
 genGraph () {
   id="$1"
   dbs="$2"
@@ -161,8 +173,8 @@ eof
   
   k="$( echo $id | awk '{ print $1 }' FS='-' )"
   desc="$( echo $id | sed "s/$k-//" )"
-  title="$k $desc"
-  subtitle="$( getSubtitle "$k" )"
+  title="$desc"
+  subtitle="$( getSubtitle "$workload" )"
   ytitle="Latency (Milliseconds)"
   xtitle="number of threads"
   
@@ -192,7 +204,8 @@ analyze () {
   dbs="$( echo "$files" | awk '{ print $NF }' FS='/' | \
               awk '{ print $1 }' FS='-' | uniq )"
   out=""
-  headline="<h2>"$type"</h2>"
+  headline="<h2>$( getHeadLine "$type" )</h2>"
+  echo "$headline"
   opkind="$( echo "$files" | xargs -d "\n" grep '^\[' | grep -v -e TOTAL \
               -e CLEANUP -e OVERALL | awk '{ print $1 }' FS=',' | \
               awk '{ print $2 }' FS=':' | \
