@@ -256,5 +256,5 @@ eof
 . ./page.template
 echo "$page" > "$pageDir/index.html"
 
-echo "see the url: http://10.128.170.51:8000/userContent/index.html"
+echo "see the url: http://10.128.170.51:8000/"
 #end.
