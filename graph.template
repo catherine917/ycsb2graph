@@ -1,5 +1,6 @@
-graph="$headline
+graph="$headline<div class="chart-container">
 <div id=\"$id\" class="chart"></div>
+<button id=\"btn-$id\">Hide Series</button>
 <script>
 \$(document).ready(function() {  
    var chart = {
@@ -54,9 +55,27 @@ graph="$headline
    json.series = series;
    json.plotOptions = plotOptions;
    \$('#$id').highcharts(json);
-  
+   var chart = \$('#$id').highcharts();
+   var btn = \$('#btn-$id');
+   btn.click(function() {
+        var series = chart.series[0];
+        if (series.visible) {
+            \$(chart.series).each(function(){
+                this.setVisible(false, false);
+            });
+            chart.redraw();
+            btn.html('Show Series');
+        } else {
+            \$(chart.series).each(function(){
+                this.setVisible(true, false);
+            });
+            chart.redraw();
+            btn.html('Hide Series');
+        }
+   })
 });
 </script>
+</div>
 "
 allgraph="$allgraph $graph"
 

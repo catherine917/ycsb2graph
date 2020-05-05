@@ -6,11 +6,19 @@ page="
 <script src=\"http://code.highcharts.com/highcharts.js\"></script> 
 </head>
 <style>
-.chart {
-	width: 47%; 
-	height: 400px; 
+.chart-container {
+	width: 47%;
 	margin: 5px 0 10px 10px;
 	float: left;
+	display: flex;
+    flex-direction: column;
+}
+.chart-container button {
+	margin: 0 auto;
+}
+.chart {
+	width: 100%; 
+	height: 400px; 
 }
 h1 {
 	text-align: center;
